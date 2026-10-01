@@ -1,0 +1,40 @@
+name: Mirror opencode2 binaries
+
+# Polls npm for new opencode2 builds and mirrors the binaries as GitHub
+# release assets. Upstream does not publish opencode2 binaries to GitHub
+# releases, so this keeps a versioned, checksummed copy here.
+
+on:
+  schedule:
+    # Every 6 hours
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      npm_tag:
+        description: "npm dist-tag to mirror"
+        default: "latest"
+        type: choice
+        options:
+          - latest
+          - beta
+          - dev
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mirror.yml"
+      - "scripts/mirror.sh"
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mirror binaries from npm
+        run: bash scripts/mirror.sh
+        env:
+          NPM_TAG: ${{ inputs.npm_tag || 'latest' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
